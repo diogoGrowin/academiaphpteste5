@@ -1,0 +1,27 @@
+RewriteEngine on
+
+#redirect to a page inside /public with 404.php
+ErrorDocument 404 /404.php 
+
+#processar login
+RewriteRule ^/?auth$ index.php?ct=UserController&mt=login
+
+#processar logout
+RewriteRule ^/?logout$ index.php?ct=UserController&mt=logout
+
+#show all logs
+RewriteRule ^/?show_logs$ index.php?ct=LogController&mt=display_all
+RewriteRule ^/?download_logs$ index.php?ct=LogController&mt=download
+
+#upload file
+RewriteRule ^/?upload_file/([0-9]+)$ index.php?ct=filecontroller&mt=upload_file$1
+#RewriteRule ^/?ajax?/([0-9]+)$ index.php?ct=IndexController&mt=process_ajax
+
+#test method
+#RewriteRule ^/?api/indexes/?(.*)$ index.php?ct=indexescontroller&mt=test
+
+#register user
+RewriteRule ^/?api/indexes/register?(.*)$ index.php?ct=usercontroller&mt=register
+
+#alter user
+RewriteRule ^/?api/indexes/alter$ index.php?ct=usercontroller&mt=modify
