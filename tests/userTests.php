@@ -107,6 +107,42 @@ class UserControllerTest extends TestCase          //class to test from Unit
 
     public function testModify()
     {
+        //arguments to test login() method
+        $_POST['username'] = 'admin2';
+        $_POST['password'] = 'admin2';
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+
+        //set db connection before test login, since login use db connection
+        $db = DatabaseObject::set_database($this->db);
+
+        //call login method() to test
+        $response = $this->User->modify();   //the string 'true' is to force the return of true on method to test
+
+        $this->assertEquals(
+            $response,
+            json_encode(['message' => 'Sucess updating user password!']),
+            'not possible to modify the user'
+        );
+    }
+
+    public function testRegister()
+    {
+        //arguments to test login() method
+        $_POST['username'] = 'admin2';
+        $_POST['password'] = 'admin2';
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+
+        //set db connection before test login, since login use db connection
+        $db = DatabaseObject::set_database($this->db);
+
+        //call login method() to test
+        $response = $this->User->Register();   //the string 'true' is to force the return of true on method to test
+
+        $this->assertEquals(
+            $response,
+            json_encode(['message' => 'Sucess creating new user']),
+            'not possible to register the user'
+        );
 
     }
 
