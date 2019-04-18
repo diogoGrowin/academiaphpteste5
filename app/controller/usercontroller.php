@@ -114,9 +114,14 @@ class UserController
         $hash_code = isset($_POST['hash_code']) ? $_POST['hash_code'] : '';
         $new_pass = isset($_POST['new_pass']) ? $_POST['new_pass'] : '';
 
+        //write log function
+        $log_params=[];
+        $log_params['username']='';
+        $log_params['action']='modify of new user';
+
         $temp_user = UserModel::find_by_hash($hash_code);       //search user with hash
 
-        if( $temp_user)
+        if($temp_user)
         {
       
         #return json_encode(['message' => 'user details: '. $temp_user->email]);
@@ -129,9 +134,13 @@ class UserController
         if($diff > 5)
         {   
             //user already expire
+                      
+        $log_params['time_stamp']=date("Y-m-d H-i-s");
+        $log_params['description']='User '.' with IP: ' .$_SERVER['REMOTE_ADDR'].' try modify invalid user: '.$temp_user->first_name . ' !!User expired';
+        LogController::write_log($log_params);
 
-          return   $json = json_encode(['message' => 'Error!! This user no longer available, it already expires!']); 
-
+        return $json = json_encode(['message' => 'Error!! This user no longer available, it already expires!']);
+                            
         }else
         {   
             #return json_encode(['message' =>  echo('aaaaaa') ]);
@@ -148,7 +157,11 @@ class UserController
             //modify users table to authorized be 1
 
             if($res)
-            {
+            {   
+                $log_params['time_stamp']=date("Y-m-d H-i-s");
+                $log_params['description']='User '.' with IP: ' .$_SERVER['REMOTE_ADDR'].' modify invalid user: '.$temp_user->first_name  . ' successfully';
+                LogController::write_log($log_params);
+
                 return  $json = json_encode(['message' => 'Sucess updating user password!' ]);
             }else
             {
@@ -158,8 +171,11 @@ class UserController
         }
 
     }else
-    {
-        return json_encode(['message' => 'User not found ']);
+    {   
+        $log_params['time_stamp']=date("Y-m-d H-i-s");
+        $log_params['description']='User '.' with IP: ' .$_SERVER['REMOTE_ADDR'].' try modify invalid user !!!! User not found';
+        LogController::write_log($log_params);
+        return json_encode(['message' => 'User not found ']);        
     }
 
     }
@@ -168,9 +184,9 @@ class UserController
     {      
         //parameters for the user
         $params=[];
-        $params['first_name']='admin2';
+        $params['first_name']='admin3';
         $params['email']='facexperiencia@gmail.com';
-        $params['username']='admin2';
+        $params['username']='admin3';
         $params['hashed_password'] = $this->set_hashed_password();  //get random hash for password
         $params['last_login']=date("Y-m-d H-i-s");
         $params['time_stamp']= date("Y-m-d H-i-s");
@@ -190,7 +206,84 @@ class UserController
             $json = json_encode(['message' => 'Error!']);
         }
 
+        //write log function
+        $log_params=[];
+        $log_params['username']='';
+        $log_params['action']='creation of new user';
+        $log_params['time_stamp']=date("Y-m-d H-i-s");
+        $log_params['description']='User '.' with IP: ' .$_SERVER['REMOTE_ADDR'].' create user: '.$params['username'];
+                    
+        LogController::write_log($log_params);
+
         return $json;
+    }
+
+    public function login()
+    {
+        $username = isset($_POST['username']) ? $_POST['username'] : '';
+        $password = isset($_POST['password']) ? $_POST['password'] : '';
+
+        //write log function
+        $log_params=[];
+        $log_params['username']='';
+        $log_params['action']='login';
+
+        $user = UserModel::find_by_username($username); //find user by username
+
+        if($user)   //if user exists
+        { 
+            //check password for user
+            $res_pass=$this->verify_password($password,$user);  //check password for user
+            
+            if($res_pass)
+            {   
+
+                $res_authorized= UserModel::check_authorized($user->username); //check if user is authorized to login
+
+                if($res_authorized)
+                {
+                    //password match
+                    $login_time=date("Y-m-d H-i-s");
+                    $hash=hash('md5',$user->username);      //generate hash
+
+                    $user->update_user_login($user->id,$login_time,$hash);      //update user login last login and hash
+
+                    $log_params['time_stamp']=date("Y-m-d H-i-s");
+                    $log_params['description']='User '.$user->username .' with IP: ' .$_SERVER['REMOTE_ADDR'].' has been logged in ';
+                                
+                    LogController::write_log($log_params);
+
+                    //success on login! need to return the hash to the next methods
+                    $json = json_encode(['message' => 'Login successfull. '. $hash]);
+                }else
+                {   
+                    $log_params['time_stamp']=date("Y-m-d H-i-s");
+                    $log_params['description']='User '.$user->username .' with IP: ' .$_SERVER['REMOTE_ADDR'].' try to login but not authorized';
+                                
+                    LogController::write_log($log_params);
+
+                    //user not authorized
+                    $json = json_encode(['message' => 'Error!!! User not authorized']);
+                    
+                }
+
+            }else
+            {   
+                $log_params['time_stamp']=date("Y-m-d H-i-s");
+                $log_params['description']='User '.$user->username .' with IP: ' .$_SERVER['REMOTE_ADDR'].' fail login! Wrong credentials ';
+                            
+                LogController::write_log($log_params);
+
+                $json = json_encode(['message' => 'Error!! Wrong credentials']);
+            }
+
+            return $json;
+
+        }else
+        {
+            return $json = json_encode(['message' => 'Error!! Wrong user or password']);
+        }
+
     }
 
 

@@ -38,9 +38,7 @@ class UserModel extends DatabaseObject
         $this->authorized = $args['authorized'] ?? '';
     }
 
- 
-  //method to check if user exist or not when try to login and when try to add another user
-  public static function find_by_hash($hash)
+   public static function find_by_hash($hash)
   {
     $sql='select * from '.static::$table_name .' ';
     $sql .=' where hashed_password= ?';
@@ -83,73 +81,68 @@ class UserModel extends DatabaseObject
 
   }
 
-  public function temporary_save_user($args,$hash)
-  {   
-      $sql = 'insert into temp_users ';
-      $sql .="(first_name,last_name,email,username,hashed_password,hash_key_creation) ";    
-      $sql .="values(:first_name ,"; 
-      $sql .=":last_name ,"; 
-      $sql .=":email ,"; 
-      $sql .=":username ,"; 
-      $sql .=":hashed_password ,"; 
-      $sql .=":hash_key_creation );"; 
+  //method to check if user exist or not when try to login and when try to add another user
+  public static function find_by_username($username)
+  {
+    $sql='select * from '.static::$table_name .' ';
+    $sql .=' where username= ?';
 
-      $stmt= self::$db->prepare($sql);
-  
-      $stmt->bindValue(':first_name',$args['first_name']);
-      $stmt->bindValue(':last_name',$args['last_name']);
-      $stmt->bindValue(':email',$args['email']);
-      $stmt->bindValue(':username',$args['username']);
-      $stmt->bindValue(':hashed_password',password_hash($args['password'],PASSWORD_BCRYPT));
-      $stmt->bindValue(':hash_key_creation',$hash);
+    $stmt= self::$db->prepare($sql);       //bind parameter
+    $stmt->bindParam(1,$username);
 
-      try
-      {
-        self::$db->setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_EXCEPTION);     //enable PDO Exception ERROR
-        $stmt->execute();
-        return true;
-      }catch(DPOException $e)
-      {
-          //works fine, but need to be enabled(1º line on try)
-          die("Não foi possível criar o utilizador temporario.".'<br/><br/>'.$e->getMessage().'<br/><br/>'.$stmt->debugDumpParams());
-      }
+    #return self::find_by_sql($sql);
+    $obj_array=static::find_by_sql($stmt);   //save result
+
+    if(!empty($obj_array))                 //if result
+    {
+      return array_shift($obj_array);      //return 1º element, single records
+    }else
+    {
+      return false;
+    }
   }
 
-  public static function get_temporary_user($key)
+  public static function check_authorized($username)
   {
-      $sql = 'select * from temp_users where hash_key_creation = ? limit 1;';
-  
-      $stmt= self::$db->prepare($sql);
-      $stmt->bindParam(1,$key);
-  
-      try
-      {
-        self::$db->setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_EXCEPTION);     //enable PDO Exception ERROR
-        $stmt->execute();           //execute the prepared statement
-        $result = $stmt->fetch();   //run single record and save the result on array. Need a loop to run all lines with fetch
-        return $result;
-      }catch(PDOException $e)
-      {
-          die("Não foi possível realizer a pesquisa do contato.".'<br/>'.$e->getMessage().'<br/><br/>'.$stmt->debugDumpParams());    //works fine, but need to be enabled(1º line on try)
-      }
+    $sql='select * from '.static::$table_name .' ';
+    $sql .=' where username= ? and authorized =1';
+
+    $stmt= self::$db->prepare($sql);       //bind parameter
+    $stmt->bindParam(1,$username);
+
+    #return self::find_by_sql($sql);
+    $obj_array=static::find_by_sql($stmt);   //save result
+
+    if(!empty($obj_array))                 //if result
+    {
+      return array_shift($obj_array);      //return 1º element, single records
+    }else
+    {
+      return false;
+    }
   }
 
-  public function delete_temporary_user($key)
+  public function update_user_login($id,$login_time,$hash)
   {
-      $sql="delete from temp_users ";       //query
-      $sql .= "where hash_key_creation = ? limit 1;";   
+    $sql='update users set ';
+    $sql .= 'last_login=:last_login, temp_hash=:temp_hash  where id = :id';
 
-      $stmt= self::$db->prepare($sql);
-      $stmt->bindParam(1,$key);
+    $stmt= self::$db->prepare($sql);
 
-      try{
-        self::$db->setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_EXCEPTION);     //enable PDO Exception ERROR
-        $stmt->execute();
-        return true;
-      }catch(PDOException $e)
-      {   
-          die("Não foi possível apagar o contato.".'<br/>'.$e->getMessage());    //works fine, but need to be enabled(1º line on try)
-      }
+    $stmt->bindParam(':last_login',$login_time);
+    $stmt->bindParam(':temp_hash',$hash);
+    $stmt->bindParam(':id',$id);
+
+    try
+    {
+      self::$db->setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_EXCEPTION);     //enable PDO Exception ERROR 
+      $res=$stmt->execute();
+      return $res;
+    }catch(PDOException $e)
+    {   
+        die("Não foi possível atualizar o contato.".'<br/><br/>'.$e->getMessage().'<br/><br/>'.$stmt->debugDumpParams());    
+    }
+
   }
 
 

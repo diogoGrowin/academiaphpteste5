@@ -25,3 +25,9 @@ RewriteRule ^/?api/indexes/register?(.*)$ index.php?ct=usercontroller&mt=registe
 
 #alter user
 RewriteRule ^/?api/indexes/alter$ index.php?ct=usercontroller&mt=modify
+
+#download csv file
+RewriteRule ^/?api/indexes/download$ index.php?ct=usercontroller&mt=modify
+
+#Login
+RewriteRule ^/?api/login$ index.php?ct=usercontroller&mt=login
