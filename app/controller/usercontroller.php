@@ -181,7 +181,12 @@ class UserController
     }
 
     public function register()
-    {      
+    {   
+        //write log function
+        $log_params=[];
+        $log_params['username']='';
+        $log_params['action']='creation of new user';
+
         //parameters for the user
         $params=[];
         $params['first_name']='admin3';
@@ -193,6 +198,17 @@ class UserController
         $params['authorized']=0;
 
         $user = new UserModel($params);                             //create user
+
+        //check if user already exist on DB
+        if(UserModel::find_by_username($params['username']) )
+        {   
+            $log_params['time_stamp']=date("Y-m-d H-i-s");
+            $log_params['description']='Error creating new user from IP: ' .$_SERVER['REMOTE_ADDR'] . '!! User already exists!';
+            LogController::write_log($log_params);
+
+            $json = json_encode(['message' => 'Error!!User already exist ! Register another different!']);
+        }
+
         $res=$user->create();                                       //register user on DB
 
         if($res)
@@ -206,10 +222,7 @@ class UserController
             $json = json_encode(['message' => 'Error!']);
         }
 
-        //write log function
-        $log_params=[];
-        $log_params['username']='';
-        $log_params['action']='creation of new user';
+
         $log_params['time_stamp']=date("Y-m-d H-i-s");
         $log_params['description']='User '.' with IP: ' .$_SERVER['REMOTE_ADDR'].' create user: '.$params['username'];
                     
@@ -254,7 +267,8 @@ class UserController
                     LogController::write_log($log_params);
 
                     //success on login! need to return the hash to the next methods
-                    $json = json_encode(['message' => 'Login successfull. '. $hash]);
+                    $json = json_encode(['message' => 'Login successfull. ',
+                                            'hash'=> $hash]);
                 }else
                 {   
                     $log_params['time_stamp']=date("Y-m-d H-i-s");
@@ -310,7 +324,10 @@ class UserController
             return true;
     }
 
-
+    public static function verify_hash($hash)
+    {
+        return UserModel::confirm_hash($hash);
+    }
 }
 
 

@@ -38,7 +38,7 @@ class UserModel extends DatabaseObject
         $this->authorized = $args['authorized'] ?? '';
     }
 
-   public static function find_by_hash($hash)
+  public static function find_by_hash($hash)
   {
     $sql='select * from '.static::$table_name .' ';
     $sql .=' where hashed_password= ?';
@@ -143,6 +143,26 @@ class UserModel extends DatabaseObject
         die("Não foi possível atualizar o contato.".'<br/><br/>'.$e->getMessage().'<br/><br/>'.$stmt->debugDumpParams());    
     }
 
+  }
+
+  public static function confirm_hash($hash)
+  {
+    $sql='select * from '.static::$table_name .' ';
+    $sql .=' where temp_hash= ?';
+
+    $stmt= self::$db->prepare($sql);       //bind parameter
+    $stmt->bindParam(1,$hash);
+
+    #return self::find_by_sql($sql);
+    $obj_array=static::find_by_sql($stmt);   //save result
+
+    if(!empty($obj_array))                 //if result
+    {
+      return array_shift($obj_array);      //return 1º element, single records
+    }else
+    {
+      return false;
+    }
   }
 
 

@@ -75,17 +75,18 @@ class UserControllerTest extends TestCase          //class to test from Unit
     /**
     * @runInSeparateProcess
     **/
-    public function testlogin()
+    public function testLogin()
     {   
         //arguments to test login() method
-        $args['username'] = 'admin';
-        $args['password'] = 'admin';
+        $_POST['username'] = 'admin2';
+        $_POST['password'] = 'admin2';
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
 
         //set db connection before test login, since login use db connection
         $db = DatabaseObject::set_database($this->db);
 
         //call login method() to test
-        $response = $this->User->login($args,'true');   //the string 'true' is to force the return of true on method to test
+        $response = $this->User->login();   //the string 'true' is to force the return of true on method to test
 
         #$response->assertSessionMissing('errors');
 
@@ -96,18 +97,17 @@ class UserControllerTest extends TestCase          //class to test from Unit
             'Location:/logs', xdebug_get_headers()
         ); */
 
-        /*         
-            $this->assertEquals(
-            unserialize( $response),
-            include(__DIR__.'/resources/views/index.view.php'),
-            'error !! Not logged in!'
-        ); */
 
         $this->assertEquals(
             $response,
-            true,
+            json_encode(['message' => 'Login successfull.']),
             'not possible to login'
         );
+    }
+
+    public function testModify()
+    {
+
     }
 
 
